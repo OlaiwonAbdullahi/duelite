@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Guild brand tokens */
+  --color-canvas: var(--canvas);
+  --color-paper: var(--paper);
+  --color-cloud: var(--cloud);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-primary-bright: var(--primary-bright);
+  --color-primary-deep: var(--primary-deep);
+  --color-accent-gold: var(--accent-gold);
+  --color-on-primary: var(--on-primary);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-2xl: 32px;
+}
+
+:root {
+  /* shadcn mapping, driven by Guild tokens */
+  --background: #fbfaf7;
+  --foreground: #1b2520;
+  --card: #fbfaf7;
+  --card-foreground: #1b2520;
+  --popover: #fbfaf7;
+  --popover-foreground: #1b2520;
+  --primary: #0b6e4f;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f2ec;
+  --secondary-foreground: #1b2520;
+  --muted: #e6f2ec;
+  --muted-foreground: #7a847f;
+  --accent: #e6f2ec;
+  --accent-foreground: #1b2520;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #e6f2ec;
+  --input: #e6f2ec;
+  --ring: rgba(11, 110, 79, 0.4);
+  --radius: 0.625rem;
+  --sidebar: #f4f2ec;
+  --sidebar-foreground: #1b2520;
+  --sidebar-primary: #0b6e4f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6f2ec;
+  --sidebar-accent-foreground: #1b2520;
+  --sidebar-border: #e6f2ec;
+  --sidebar-ring: rgba(11, 110, 79, 0.4);
+
+  /* Guild brand tokens */
+  --canvas: #fbfaf7;
+  --paper: #f4f2ec;
+  --cloud: #e6f2ec;
+  --ink: #1b2520;
+  --ink-soft: #7a847f;
+  --hairline: #e6f2ec;
+  --hairline-strong: #7a847f;
+  --primary-bright: #0f996d;
+  --primary-deep: #08583f;
+  --accent-gold: #e8a33d;
+  --on-primary: #ffffff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-canvas text-ink;
+  }
+  html {
+    @apply font-sans;
+  }
+}

@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  REP
+}
+
+enum PayStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model User {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  level        String?
+  phone        String @unique // WhatsApp identity key
+  passwordHash String
+  role         Role   @default(STUDENT)
+
+  // BMONI identity
+  bmoniUserId   String? @unique
+  walletId      String?
+  walletAddress String?
+  ownerKeyEnc   String? // encrypted EVM owner private key
+  provisioned   Boolean @default(false)
+  provisionError String?
+
+  memberships Membership[]
+  payments    Payment[]
+  spacesRepped Space[] @relation("SpaceRep")
+
+  createdAt DateTime @default(now())
+}
+
+model Space {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  name     String // "200L CSC Department"
+  joinCode String @unique // "CSC200"
+  repId    String @db.ObjectId
+  rep      User   @relation("SpaceRep", fields: [repId], references: [id])
+
+  // Department's own BMONI identity
+  bmoniUserId   String
+  walletId      String
+  walletAddress String
+  ownerKeyEnc   String
+
+  items       PaymentItem[]
+  memberships Membership[]
+
+  createdAt DateTime @default(now())
+}
+
+model Membership {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  spaceId   String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  space     Space    @relation(fields: [spaceId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, spaceId])
+}
+
+model PaymentItem {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  spaceId String @db.ObjectId
+  space   Space  @relation(fields: [spaceId], references: [id])
+  title   String // "Departmental Dues"
+  amount  Int // naira, integer
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id     String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId String      @db.ObjectId
+  itemId String      @db.ObjectId
+  user   User        @relation(fields: [userId], references: [id])
+  item   PaymentItem @relation(fields: [itemId], references: [id])
+
+  amount     Int
+  status     PayStatus @default(PENDING)
+  bmoniTxRef String? // transfer reference / tx hash
+  verified   Boolean   @default(false) // reconciled against BMONI ledger
+  flagged    Boolean   @default(false) // Duey anomaly flag
+  flagReason String?
+
+  createdAt DateTime @default(now())
+}

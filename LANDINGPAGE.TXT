@@ -1,0 +1,97 @@
+# DueLite — Landing Page Copy
+
+## HERO
+**Badge:** Built on BMONI · Powered by AI
+
+# Pay your dues. See every kobo. No stories.
+
+DueLite gives course reps a clean way to collect departmental dues — and gives every student proof of where the money went. Money moves on BMONI's regulated stablecoin rails, so the record isn't our word. It's the ledger's.
+
+**[Primary CTA] Start collecting** · **[Secondary CTA] Chat Duey on WhatsApp →**
+
+**Trust strip:** Powered by BMONI · cNGN backed 1:1 by Nigerian banks · Every transaction on a verifiable ledger · Test environment — no real funds
+
+---
+
+## THE PROBLEM
+### Every semester, same gbas gbos.
+
+The rep collects ₦500 from 120 people. Cash here, transfer there, a notebook somewhere. By exam week, someone's asking *"where did our money go?"* — and there's no clean answer. Reps get accused. Students get ignored. Trust dies before the semester does.
+
+**DueLite ends the argument.** Not with promises — with a ledger nobody can edit.
+
+---
+
+## HOW IT WORKS
+### From "abeg pay your dues" to paid — in three taps.
+
+**01 · Rep opens a department.** Name it, set the due, get a link. Behind the scenes, DueLite opens a secure BMONI wallet for the department. Takes two minutes.
+
+**02 · Students pay from the link.** No app to download. Open the link, see what you owe, tap pay. Each student gets their own secure balance funded by simple bank transfer — money moves student → department as cNGN, a regulated digital naira backed 1:1 by real banks.
+
+**03 · Everyone sees the same truth.** The paid list, the balance, every single transaction — pulled live from the BMONI ledger, not typed in by anybody. When money leaves, it leaves through a verified bank withdrawal. Receipts for all. Arguments for none.
+
+---
+
+## DUEY — AI SECTION
+### Meet Duey. Your money, explained on WhatsApp.
+
+No dashboard-wahala for students. Just text Duey:
+
+- *"How much do I owe?"* → instant answer
+- *"Pay my dues"* → done in chat, receipt follows
+- *"Did my payment enter?"* → confirmed with the transaction ref
+- *"Wetin we don spend?"* → plain-language breakdown — English or Pidgin
+
+Duey also watches the money: duplicate payments, odd amounts, anything unusual — flagged before it becomes a problem.
+
+**[CTA] Ask Duey something →**
+
+---
+
+## TRANSPARENCY SECTION
+### "Trust me" is not a system.
+
+Every payment on DueLite lands on a public cryptographic ledger through BMONI. That means:
+
+- **Reps are protected** — the record proves what came in and what went out.
+- **Students are respected** — verify any payment yourself, anytime.
+- **Handover is painless** — next set of execs inherit a complete, timestamped history, not a torn notebook.
+
+---
+
+## AUDIENCE SPLIT
+**For reps:** Stop chasing payments. Share one link, watch the list fill up, withdraw with a clean record behind you.
+**For students:** Pay in seconds, keep your receipt, and see exactly what your ₦500 funded.
+
+---
+
+## FINAL CTA
+### Campus money, minus the wahala.
+
+The dues are just the start — every student who pays gets a secure digital wallet. Financial access, one department at a time.
+
+**[Primary] Start collecting** · **[Secondary] I'm a student — chat Duey**
+
+**Footer:** Built overnight at NITHUB Innovation Fair Hackathon '26 · Powered by BMONI sandbox · Test funds only · A DueLite build inspired by Duevy
+
+---
+---
+
+# DISTILLED VERSION (if you're short on time — hero + 3 blocks + CTA)
+
+# Pay your dues. See every kobo. No stories.
+
+Course reps collect. Students verify. Every naira lives on BMONI's regulated ledger — so nobody has to take anybody's word for it.
+
+**Pay in chat.** Text Duey on WhatsApp: *"pay my dues"* — done, receipt in.
+**Proof, not promises.** The paid list comes from the ledger, not a notebook.
+**Clean exits.** Money leaves only through verified bank withdrawals.
+
+**[Start collecting] · [Chat Duey →]**
+
+*Built at NITHUB Hackathon '26 · Powered by BMONI · Test environment*
+
+wlLygbU26KJ7xcTs
+
+olaiwonabdullahi_db_user
