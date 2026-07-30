@@ -1,6 +1,11 @@
 import type { User, DueyChannel } from "@prisma/client"
 import type OpenAI from "openai"
-import type { ChatCompletionMessageParam, ChatCompletionMessageToolCall } from "openai/resources/chat/completions"
+import { APIConnectionError } from "openai"
+import type {
+  ChatCompletionCreateParamsNonStreaming,
+  ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
+} from "openai/resources/chat/completions"
 
 import { prisma } from "@/lib/prisma"
 import { getAiClient, AI_MODEL } from "@/lib/ai-client"
@@ -9,6 +14,20 @@ import { DUEY_TOOLS, executeDueyTool } from "@/lib/duey/tools"
 
 const HISTORY_LIMIT = 30
 const MAX_TOOL_ROUNDS = 5
+
+// ai.hackclub.com (Duey's LLM proxy, see lib/ai-client.ts) occasionally has
+// transient DNS/connection hiccups (EAI_AGAIN and similar) that clear up
+// within a second or two. One quick retry avoids dropping the user's message
+// entirely for what's usually a blip, without masking real outages.
+async function createCompletionWithRetry(client: OpenAI, params: ChatCompletionCreateParamsNonStreaming) {
+  try {
+    return await client.chat.completions.create(params)
+  } catch (err) {
+    if (!(err instanceof APIConnectionError)) throw err
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    return await client.chat.completions.create(params)
+  }
+}
 
 async function loadHistory(userId: string, channel: DueyChannel): Promise<ChatCompletionMessageParam[]> {
   const rows = await prisma.dueyMessage.findMany({
@@ -73,7 +92,7 @@ export async function runDuey(params: {
   const client: OpenAI = getAiClient()
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const completion = await client.chat.completions.create({
+    const completion = await createCompletionWithRetry(client, {
       model: AI_MODEL,
       messages,
       tools: DUEY_TOOLS,

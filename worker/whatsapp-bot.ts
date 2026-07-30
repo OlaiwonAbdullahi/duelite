@@ -107,6 +107,16 @@ async function connect() {
         await sock!.sendMessage(jid, { text: reply })
       } catch (err) {
         logger.error(err, "Failed to handle inbound WhatsApp message")
+        // Without this, a transient failure (e.g. the AI proxy's DNS
+        // hiccupping) drops the user's message with no reply at all, which
+        // is indistinguishable from the bot being broken.
+        try {
+          await sock!.sendMessage(jid, {
+            text: "Sorry, I'm having trouble reaching the AI right now — try again in a bit.",
+          })
+        } catch (sendErr) {
+          logger.error(sendErr, "Failed to send failure notice to user")
+        }
       }
     }
   })
