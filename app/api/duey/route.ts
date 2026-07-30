@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { DueyRole } from "@prisma/client"
 
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth-helpers"
@@ -26,7 +25,7 @@ export async function GET() {
   })
 
   return NextResponse.json({
-    messages: rows.map((row: { role: DueyRole; content: string | null }) => ({
+    messages: rows.map((row: { role: "USER" | "ASSISTANT" | "TOOL"; content: string | null }) => ({
       role: row.role === "USER" ? "user" : "assistant",
       content: row.content,
     })),
