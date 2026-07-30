@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useId, type ComponentProps, type ReactNode } from "react"
+import { createContext, useContext, type ComponentProps, type ReactNode } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
 
@@ -72,7 +72,6 @@ function DialogContent({
   ...props
 }: ComponentProps<"div"> & { showClose?: boolean }) {
   const { open, setOpen } = useDialogContext()
-  const titleId = useId()
   if (!open) return null
 
   return (
@@ -88,7 +87,6 @@ function DialogContent({
           data-slot="dialog-content"
           role="dialog"
           aria-modal="true"
-          aria-labelledby={titleId}
           className={cn(
             "w-full max-w-md rounded-lg border border-hairline bg-paper p-6 shadow-xl outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             className
