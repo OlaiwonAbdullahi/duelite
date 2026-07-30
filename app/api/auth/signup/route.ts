@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Prisma } from "@prisma/client"
-
 import { prisma } from "@/lib/prisma"
 import { hashPassword } from "@/lib/auth-helpers"
 import { createSession } from "@/lib/session"
@@ -36,7 +34,7 @@ export async function POST(request: NextRequest) {
       data: { name, phone, passwordHash, role, level },
     })
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    if (isPrismaKnownRequestError(err, "P2002")) {
       const target = Array.isArray(err.meta?.target) ? err.meta.target.join(", ") : String(err.meta?.target ?? "")
       const message = target.includes("phone")
         ? "An account with this phone number already exists"
@@ -81,4 +79,11 @@ export async function POST(request: NextRequest) {
       provisioned: user.provisioned,
     },
   })
+}
+
+function isPrismaKnownRequestError(
+  error: unknown,
+  code: string,
+): error is { code: string; meta?: { target?: string | string[] } } {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code
 }

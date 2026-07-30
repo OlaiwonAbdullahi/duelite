@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Prisma } from "@prisma/client"
-
 import { prisma } from "@/lib/prisma"
 import { getCurrentUser } from "@/lib/auth-helpers"
 
@@ -27,7 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     await prisma.membership.create({ data: { userId: user.id, spaceId: space.id } })
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    if (isPrismaKnownRequestError(err, "P2002")) {
       return NextResponse.json({ error: "You're already in this space." }, { status: 409 })
     }
     throw err
@@ -48,4 +46,11 @@ export async function POST(request: NextRequest) {
       })),
     },
   })
+}
+
+function isPrismaKnownRequestError(
+  error: unknown,
+  code: string,
+): error is { code: string; meta?: { target?: string | string[] } } {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code
 }
