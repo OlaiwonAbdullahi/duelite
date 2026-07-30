@@ -46,8 +46,6 @@ interface DashboardResponse {
 interface DashboardContextValue {
   loading: boolean
   role: DashboardRole
-  setRole: (role: DashboardRole) => void
-  canViewAsRep: boolean
 
   name: string
   subtitle: string
@@ -148,8 +146,6 @@ function DashboardProvider({ children }: { children: React.ReactNode }) {
   const value: DashboardContextValue = {
     loading,
     role,
-    setRole,
-    canViewAsRep: managedSpace !== null,
 
     name: me?.name ?? "",
     subtitle: isStudent ? (me?.level ?? "Student") : "Course rep",

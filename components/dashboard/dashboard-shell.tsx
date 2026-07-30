@@ -6,7 +6,7 @@ import { DueyChat } from "@/components/dashboard/duey-chat"
 import { DashboardProvider, useDashboard } from "@/components/dashboard/dashboard-context"
 
 function DashboardChrome({ children }: { children: React.ReactNode }) {
-  const { loading, role, setRole, canViewAsRep, name, balance } = useDashboard()
+  const { loading, name, balance } = useDashboard()
 
   if (loading) {
     return (
@@ -18,13 +18,7 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
-      <Topbar
-        role={role}
-        onRoleChange={setRole}
-        name={name}
-        balance={balance}
-        canViewAsRep={canViewAsRep}
-      />
+      <Topbar name={name} balance={balance} />
       <div className="mx-auto flex w-full max-w-[1280px] flex-1">
         <DashboardNav />
         <main className="min-w-0 flex-1 px-4 py-8 pb-24 sm:px-6 sm:pb-8 lg:px-8">{children}</main>

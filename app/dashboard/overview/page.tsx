@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { HugeiconsIcon } from "@hugeicons/react"
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AiChat02Icon,
   Alert01Icon,
@@ -9,26 +9,26 @@ import {
   MoneyReceive01Icon,
   UserGroupIcon,
   Wallet01Icon,
-} from "@hugeicons/core-free-icons"
+} from "@hugeicons/core-free-icons";
 
-import { StatTile } from "@/components/dashboard/stat-tile"
-import { useDashboard } from "@/components/dashboard/dashboard-context"
+import { StatTile } from "@/components/dashboard/stat-tile";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
 
 function OverviewPage() {
-  const { role, studentBalance, spaces, totals, anomalies } = useDashboard()
-  const isRep = role === "REP"
+  const { role, studentBalance, spaces, totals, anomalies } = useDashboard();
+  const isRep = role === "REP";
 
   const outstanding = spaces
     .flatMap((s) => s.items)
     .filter((i) => i.status !== "PAID")
-    .reduce((sum, i) => sum + i.amount, 0)
+    .reduce((sum, i) => sum + i.amount, 0);
 
   const paidTotal = spaces
     .flatMap((s) => s.items)
     .filter((i) => i.status === "PAID")
-    .reduce((sum, i) => sum + i.amount, 0)
+    .reduce((sum, i) => sum + i.amount, 0);
 
-  const repOutstanding = totals.totalExpected - totals.totalCollected
+  const repOutstanding = totals.totalExpected - totals.totalCollected;
 
   return (
     <div className="flex flex-col gap-10">
@@ -39,29 +39,45 @@ function OverviewPage() {
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <StatTile label="Wallet balance" value={`₦${studentBalance.toLocaleString()}`} icon={Wallet01Icon} />
+          <StatTile
+            label="Wallet balance"
+            value={`₦${studentBalance.toLocaleString()}`}
+            icon={Wallet01Icon}
+          />
           <StatTile
             label="Outstanding"
             value={`₦${outstanding.toLocaleString()}`}
             icon={CheckmarkCircle02Icon}
             iconColor="var(--accent-gold)"
           />
-          <StatTile label="Spaces joined" value={`${spaces.length}`} icon={Building06Icon} />
+          <StatTile
+            label="Spaces joined"
+            value={`${spaces.length}`}
+            icon={Building06Icon}
+          />
         </div>
 
         <div className="mt-6 flex items-center gap-3 rounded-lg border border-hairline bg-paper px-5 py-4">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cloud">
-            <HugeiconsIcon icon={AiChat02Icon} size={18} color="var(--primary)" />
+            <HugeiconsIcon
+              icon={AiChat02Icon}
+              size={18}
+              color="var(--primary)"
+            />
           </div>
           <p className="text-[13px] leading-[1.5] text-ink-soft">
-            <span className="font-medium text-ink">Prefer WhatsApp?</span> Text Duey &ldquo;how much
-            do I owe?&rdquo; or &ldquo;pay my dues&rdquo; and it&apos;ll walk you through the same
-            flow — in English or Pidgin.
+            <span className="font-medium text-ink">Prefer WhatsApp?</span> Text
+            Duey at{" "}
+            <span className="font-mono font-medium text-ink">
+              +1 415 523 8886
+            </span>{" "}
+            in English or Pidgin.
           </p>
         </div>
 
         <p className="mt-4 text-center text-[12px] text-ink-soft">
-          {paidTotal > 0 && `You've sent ₦${paidTotal.toLocaleString()} through Duelite so far. `}
+          {paidTotal > 0 &&
+            `You've sent ₦${paidTotal.toLocaleString()} through Duelite so far. `}
           Balances shown are BMONI sandbox test funds.
         </p>
       </div>
@@ -84,8 +100,10 @@ function OverviewPage() {
                     className="mt-0.5 shrink-0"
                   />
                   <p className="text-[13px] leading-[1.5] text-ink">
-                    <span className="font-semibold">Duey flagged {alert.memberName}</span> ·{" "}
-                    {alert.itemTitle} — {alert.reason}
+                    <span className="font-semibold">
+                      Duey flagged {alert.memberName}
+                    </span>{" "}
+                    · {alert.itemTitle} — {alert.reason}
                   </p>
                 </div>
               ))}
@@ -93,20 +111,32 @@ function OverviewPage() {
           )}
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label="Collected" value={`₦${totals.totalCollected.toLocaleString()}`} icon={MoneyReceive01Icon} />
+            <StatTile
+              label="Collected"
+              value={`₦${totals.totalCollected.toLocaleString()}`}
+              icon={MoneyReceive01Icon}
+            />
             <StatTile
               label="Outstanding"
               value={`₦${repOutstanding.toLocaleString()}`}
               icon={Alert01Icon}
               iconColor="var(--accent-gold)"
             />
-            <StatTile label="Verified on ledger" value={`${totals.verifiedCount}`} icon={CheckmarkCircle02Icon} />
-            <StatTile label="Members" value={`${totals.memberCount}`} icon={UserGroupIcon} />
+            <StatTile
+              label="Verified on ledger"
+              value={`${totals.verifiedCount}`}
+              icon={CheckmarkCircle02Icon}
+            />
+            <StatTile
+              label="Members"
+              value={`${totals.memberCount}`}
+              icon={UserGroupIcon}
+            />
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default OverviewPage
+export default OverviewPage;

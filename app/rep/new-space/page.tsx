@@ -9,6 +9,7 @@ import {
   CheckmarkCircle02Icon,
   Copy01Icon,
 } from "@hugeicons/core-free-icons"
+import { toast } from "sonner"
 
 import { AuthShell } from "@/components/auth/auth-shell"
 import { Label } from "@/components/ui/label"
@@ -26,7 +27,6 @@ export default function NewSpacePage() {
   const [step, setStep] = useState<"form" | "created">("form")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
   const [spaceName, setSpaceName] = useState("")
   const [joinCode, setJoinCode] = useState("")
 
@@ -50,8 +50,7 @@ export default function NewSpacePage() {
 
   function handleCopy() {
     navigator.clipboard?.writeText(joinCode).catch(() => {})
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    toast.success("Join code copied")
   }
 
   if (step === "created") {
@@ -80,7 +79,7 @@ export default function NewSpacePage() {
             className={cn(buttonVariants({ variant: "secondary" }), "w-full")}
           >
             <HugeiconsIcon icon={Copy01Icon} size={16} />
-            {copied ? "Copied!" : "Copy join code"}
+            Copy join code
           </button>
           <button
             type="button"

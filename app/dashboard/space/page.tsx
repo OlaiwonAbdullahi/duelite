@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Copy01Icon, UserGroupIcon } from "@hugeicons/core-free-icons"
+import { toast } from "sonner"
 
 import { SpaceCard } from "@/components/dashboard/space-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
@@ -16,13 +16,14 @@ function SpacePage() {
   const { role, spaces, refreshMyDues, managedSpace, items, members, refreshDashboard } = useDashboard()
   const isRep = role === "REP"
 
-  const [copied, setCopied] = useState(false)
-
   function handleCopyCode() {
     if (!managedSpace) return
     navigator.clipboard?.writeText(managedSpace.joinCode).catch(() => {})
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    toast.success("Join code copied")
+  }
+
+  function handleJoined() {
+    refreshMyDues().catch(() => toast.error("Joined, but couldn't refresh your dues — reload the page."))
   }
 
   async function handleCreateItem(item: { title: string; amount: number }) {
@@ -33,8 +34,9 @@ function SpacePage() {
         body: JSON.stringify({ spaceId: managedSpace.id, ...item }),
       })
       await refreshDashboard()
+      toast.success(`"${item.title}" added — ₦${item.amount.toLocaleString()}`)
     } catch (err) {
-      console.error(err instanceof ApiError ? err.message : err)
+      toast.error(err instanceof ApiError ? err.message : "Couldn't create the payment item. Try again.")
     }
   }
 
@@ -48,7 +50,7 @@ function SpacePage() {
               Departments and groups you&apos;ve joined as a member.
             </p>
           </div>
-          <JoinSpaceDialog onJoin={() => refreshMyDues()} />
+          <JoinSpaceDialog onJoin={handleJoined} />
         </div>
 
         <div className="mt-5">
@@ -57,7 +59,7 @@ function SpacePage() {
               icon={UserGroupIcon}
               title="Join your department to see your dues."
               description="Ask your course rep for their join code, then add it here."
-              action={<JoinSpaceDialog onJoin={() => refreshMyDues()} />}
+              action={<JoinSpaceDialog onJoin={handleJoined} />}
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -82,7 +84,7 @@ function SpacePage() {
               className="flex w-fit items-center gap-2 rounded-full bg-cloud px-4 py-2 font-mono text-[13px] font-medium text-ink transition-colors duration-300 hover:bg-hairline cursor-pointer"
             >
               <HugeiconsIcon icon={Copy01Icon} size={14} />
-              {copied ? "Copied!" : managedSpace.joinCode}
+              {managedSpace.joinCode}
             </button>
           </div>
 
