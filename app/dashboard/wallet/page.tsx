@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { StatTile } from "@/components/dashboard/stat-tile"
 import { PayoutCard } from "@/components/dashboard/payout-card"
+import { WithdrawalDetailsCard } from "@/components/dashboard/withdrawal-details-card"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
 
 function WalletPage() {
@@ -97,6 +98,9 @@ function WalletPage() {
           <p className="mt-1 text-[13px] text-ink-soft">
             Withdraw dues collected by your department to your bank.
           </p>
+          <div className="mt-4 max-w-sm">
+            <WithdrawalDetailsCard />
+          </div>
           <div className="mt-4 max-w-sm">
             <PayoutCard balance={repBalance} onWithdrawn={refreshDashboard} />
           </div>
