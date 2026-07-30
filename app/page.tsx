@@ -107,7 +107,9 @@ export default function Home() {
                 Start collecting
               </a>
               <a
-                href="#duey"
+                href="https://wa.me/2349027571545"
+                target="_blank"
+                rel="noreferrer"
                 className={cn(
                   buttonVariants({ variant: "secondary" }),
                   "group",
