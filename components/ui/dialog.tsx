@@ -1,21 +1,68 @@
 "use client"
 
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
+import { createContext, useContext, useId, type ComponentProps, type ReactNode } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 
-function Dialog(props: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+interface DialogContextValue {
+  open: boolean
+  setOpen: (open: boolean) => void
 }
 
-function DialogTrigger(props: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+const DialogContext = createContext<DialogContextValue | null>(null)
+
+function useDialogContext() {
+  const context = useContext(DialogContext)
+  if (!context) throw new Error("Dialog components must be used within Dialog")
+  return context
 }
 
-function DialogClose(props: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+function Dialog({
+  open = false,
+  onOpenChange,
+  children,
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  children: ReactNode
+}) {
+  return (
+    <DialogContext.Provider value={{ open, setOpen: onOpenChange ?? (() => {}) }}>
+      {children}
+    </DialogContext.Provider>
+  )
+}
+
+function DialogTrigger({ onClick, ...props }: ComponentProps<"button">) {
+  const { setOpen } = useDialogContext()
+  return (
+    <button
+      type="button"
+      data-slot="dialog-trigger"
+      {...props}
+      onClick={(event) => {
+        onClick?.(event)
+        if (!event.defaultPrevented) setOpen(true)
+      }}
+    />
+  )
+}
+
+function DialogClose({ onClick, ...props }: ComponentProps<"button">) {
+  const { setOpen } = useDialogContext()
+  return (
+    <button
+      type="button"
+      data-slot="dialog-close"
+      {...props}
+      onClick={(event) => {
+        onClick?.(event)
+        if (!event.defaultPrevented) setOpen(false)
+      }}
+    />
+  )
 }
 
 function DialogContent({
@@ -23,16 +70,25 @@ function DialogContent({
   children,
   showClose = true,
   ...props
-}: DialogPrimitive.Popup.Props & { showClose?: boolean }) {
+}: ComponentProps<"div"> & { showClose?: boolean }) {
+  const { open, setOpen } = useDialogContext()
+  const titleId = useId()
+  if (!open) return null
+
   return (
-    <DialogPrimitive.Portal data-slot="dialog-portal">
-      <DialogPrimitive.Backdrop
+    <div data-slot="dialog-portal">
+      <div
         data-slot="dialog-backdrop"
+        aria-hidden="true"
+        onClick={() => setOpen(false)}
         className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm transition-opacity duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0"
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPrimitive.Popup
+        <div
           data-slot="dialog-content"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           className={cn(
             "w-full max-w-md rounded-lg border border-hairline bg-paper p-6 shadow-xl outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             className
@@ -48,9 +104,9 @@ function DialogContent({
               <HugeiconsIcon icon={Cancel01Icon} size={16} />
             </DialogClose>
           )}
-        </DialogPrimitive.Popup>
+        </div>
       </div>
-    </DialogPrimitive.Portal>
+    </div>
   )
 }
 
@@ -74,9 +130,9 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function DialogTitle(props: DialogPrimitive.Title.Props) {
+function DialogTitle(props: ComponentProps<"h2">) {
   return (
-    <DialogPrimitive.Title
+    <h2
       data-slot="dialog-title"
       className={cn("text-[18px] font-semibold leading-[1.3] text-ink", props.className)}
       {...props}
@@ -84,9 +140,9 @@ function DialogTitle(props: DialogPrimitive.Title.Props) {
   )
 }
 
-function DialogDescription(props: DialogPrimitive.Description.Props) {
+function DialogDescription(props: ComponentProps<"p">) {
   return (
-    <DialogPrimitive.Description
+    <p
       data-slot="dialog-description"
       className={cn("text-[14px] leading-[1.5] text-ink-soft", props.className)}
       {...props}
