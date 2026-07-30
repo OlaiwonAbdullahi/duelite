@@ -48,7 +48,7 @@ function WithdrawalDetailsCard() {
   }
 
   return (
-    <Card className="max-w-sm p-5">
+    <Card className="h-full p-5">
       <h3 className="text-[14px] font-semibold text-ink">Withdrawal details</h3>
       <p className="mt-1 text-[12px] leading-[1.5] text-ink-soft">Verify and save the Nigerian account that receives department payouts.</p>
       <form onSubmit={saveDetails} className="mt-4 flex flex-col gap-4">

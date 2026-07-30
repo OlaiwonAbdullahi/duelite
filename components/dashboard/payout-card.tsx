@@ -100,7 +100,7 @@ function PayoutCard({
 
   return (
     <>
-      <Card className="flex flex-col gap-4 p-5">
+      <Card className="flex h-full flex-col gap-4 p-5">
         <div className="flex items-center gap-2">
           <div className="flex size-9 items-center justify-center rounded-full bg-cloud">
             <HugeiconsIcon icon={BankIcon} size={18} color="var(--primary)" />

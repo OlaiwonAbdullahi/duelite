@@ -93,18 +93,19 @@ function WalletPage() {
       </div>
 
       {isRep && managedSpace && (
-        <div>
-          <h2 className="text-[16px] font-semibold text-ink">Space payout</h2>
-          <p className="mt-1 text-[13px] text-ink-soft">
-            Withdraw dues collected by your department to your bank.
-          </p>
-          <div className="mt-4 max-w-sm">
-            <WithdrawalDetailsCard />
+        <section className="border-t border-hairline pt-8">
+          <div className="max-w-2xl">
+            <h2 className="text-[18px] font-semibold text-ink">Department withdrawals</h2>
+            <p className="mt-1 text-[13px] text-ink-soft">
+              Set the verified Nigerian account that receives payouts from {managedSpace.name}.
+            </p>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <WithdrawalDetailsCard />
+              <PayoutCard balance={repBalance} onWithdrawn={refreshDashboard} />
+            </div>
           </div>
-          <div className="mt-4 max-w-sm">
-            <PayoutCard balance={repBalance} onWithdrawn={refreshDashboard} />
-          </div>
-        </div>
+        </section>
       )}
     </div>
   )
