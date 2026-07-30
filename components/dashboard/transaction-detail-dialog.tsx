@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { StatusPill } from "@/components/dashboard/status-pill"
-import type { PayStatus } from "@/lib/dummy-data"
+import type { PayStatus } from "@/lib/types"
 
 export interface TransactionDetail {
   title: string

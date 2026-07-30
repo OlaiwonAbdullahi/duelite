@@ -17,18 +17,23 @@ const VIEWS: { value: DashboardRole; label: string }[] = [
 function ViewAsSwitch({
   role,
   onRoleChange,
+  canViewAsRep,
   className,
 }: {
   role: DashboardRole
   onRoleChange: (role: DashboardRole) => void
+  canViewAsRep: boolean
   className?: string
 }) {
+  const views = canViewAsRep ? VIEWS : VIEWS.filter((view) => view.value === "STUDENT")
+  if (views.length < 2) return null
+
   return (
     <div className={cn("flex items-center gap-1 rounded-full bg-cloud p-1", className)} role="tablist">
       <span className="hidden pl-2 pr-0.5 font-sans text-[12px] font-medium text-ink-soft lg:inline">
         View as
       </span>
-      {VIEWS.map((view) => (
+      {views.map((view) => (
         <button
           key={view.value}
           type="button"
@@ -52,11 +57,13 @@ function Topbar({
   onRoleChange,
   name,
   balance,
+  canViewAsRep,
 }: {
   role: DashboardRole
   onRoleChange: (role: DashboardRole) => void
   name: string
   balance: number
+  canViewAsRep: boolean
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-canvas/80 backdrop-blur-md">
@@ -65,7 +72,12 @@ function Topbar({
           <Link href="/" className="shrink-0 text-[17px] font-semibold tracking-tight text-ink">
             Duelite.
           </Link>
-          <ViewAsSwitch role={role} onRoleChange={onRoleChange} className="hidden sm:flex" />
+          <ViewAsSwitch
+            role={role}
+            onRoleChange={onRoleChange}
+            canViewAsRep={canViewAsRep}
+            className="hidden sm:flex"
+          />
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
@@ -80,9 +92,11 @@ function Topbar({
         </div>
       </div>
 
-      <div className="border-t border-hairline px-4 py-2 sm:hidden">
-        <ViewAsSwitch role={role} onRoleChange={onRoleChange} />
-      </div>
+      {canViewAsRep && (
+        <div className="border-t border-hairline px-4 py-2 sm:hidden">
+          <ViewAsSwitch role={role} onRoleChange={onRoleChange} canViewAsRep={canViewAsRep} />
+        </div>
+      )}
     </header>
   )
 }

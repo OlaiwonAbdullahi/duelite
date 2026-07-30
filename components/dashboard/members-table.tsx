@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card"
 import { StatusPill } from "@/components/dashboard/status-pill"
-import type { MemberRow } from "@/lib/dummy-data"
+import type { MemberRow } from "@/lib/types"
 
 function MembersTable({
   members,

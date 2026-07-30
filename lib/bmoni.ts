@@ -257,6 +257,16 @@ export async function getTransactions(userId: string) {
   return bmoniRequest<BmoniResponse>("GET", `/v1/users/${userId}/smart-wallets/account/transactions`)
 }
 
+// Confirmed live shape: { smartAccountAddress, balances: [{ smartWalletId, currency, balance, error }] }.
+// The wallet's `currency` field reads "NGN" (not CNGN) even though it was
+// created with currency: "CNGN" — matching that quirk here rather than
+// guessing further.
+export function extractNgnBalance(balancesResponse: BmoniResponse): number {
+  const balances: BmoniResponse[] = balancesResponse?.balances ?? []
+  const entry = balances.find((b) => b?.currency === "NGN" || b?.currency === "CNGN")
+  return entry ? Number(entry.balance) || 0 : 0
+}
+
 // ---------------------------------------------------------------------------
 // Proposal signing — BMONI's generic pattern for any money-movement action
 // on a smart wallet (confirmed via the Nigeria withdrawal flow docs): the

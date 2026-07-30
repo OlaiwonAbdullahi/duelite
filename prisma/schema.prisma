@@ -18,6 +18,17 @@ enum PayStatus {
   FAILED
 }
 
+enum DueyChannel {
+  WEB
+  WHATSAPP
+}
+
+enum DueyRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
 model User {
   id           String @id @default(auto()) @map("_id") @db.ObjectId
   name         String
@@ -26,8 +37,13 @@ model User {
   passwordHash String
   role         Role   @default(STUDENT)
 
-  // BMONI identity
-  bmoniUserId   String? @unique
+  // BMONI identity. bmoniUserId is unique when set, but MUST NOT carry a
+  // plain @unique here: MongoDB's non-sparse unique index treats every
+  // document missing the field as an equal "null", so a second unprovisioned
+  // user (bmoniUserId never set) would collide with the first forever. The
+  // real uniqueness is enforced by a sparse index created out-of-band — see
+  // scripts/fix-bmoni-unique-index.ts.
+  bmoniUserId   String?
   walletId      String?
   walletAddress String?
   ownerKeyEnc   String? // encrypted EVM owner private key
@@ -37,6 +53,7 @@ model User {
   memberships Membership[]
   payments    Payment[]
   spacesRepped Space[] @relation("SpaceRep")
+  dueyMessages DueyMessage[]
 
   createdAt DateTime @default(now())
 }
@@ -53,6 +70,14 @@ model Space {
   walletId      String
   walletAddress String
   ownerKeyEnc   String
+
+  // Registered payout destination (get-or-create against BMONI; cached here
+  // so the rep doesn't re-enter bank details on every withdrawal)
+  withdrawalBankAccountId String?
+  withdrawalBankCode      String?
+  withdrawalBankName      String?
+  withdrawalAccountNumber String?
+  withdrawalAccountName   String?
 
   items       PaymentItem[]
   memberships Membership[]
@@ -98,4 +123,26 @@ model Payment {
   flagReason String?
 
   createdAt DateTime @default(now())
+}
+
+// Duey's conversation transcript — one row per turn, replayed back to the
+// model on each new message so multi-step flows (e.g. "pay my dues" -> "yes")
+// survive across separate HTTP requests / WhatsApp webhook calls. Mirrors an
+// OpenAI chat message closely enough to reconstruct verbatim: toolCalls holds
+// the JSON-encoded tool_calls array on an ASSISTANT turn that invoked tools,
+// toolCallId links a TOOL turn's result back to the call that produced it.
+model DueyMessage {
+  id      String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String      @db.ObjectId
+  user    User        @relation(fields: [userId], references: [id])
+  channel DueyChannel
+
+  role       DueyRole
+  content    String?
+  toolCalls  String? // JSON: [{ id, name, arguments }]
+  toolCallId String? // set on role = TOOL
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, channel, createdAt])
 }

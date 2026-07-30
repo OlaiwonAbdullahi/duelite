@@ -20,17 +20,20 @@ import { cn } from "@/lib/utils"
 function CreateItemDialog({
   onCreate,
 }: {
-  onCreate: (item: { title: string; amount: number }) => void
+  onCreate: (item: { title: string; amount: number }) => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [amount, setAmount] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const parsed = Number(amount)
     if (!title.trim() || !parsed) return
-    onCreate({ title: title.trim(), amount: parsed })
+    setSubmitting(true)
+    await onCreate({ title: title.trim(), amount: parsed })
+    setSubmitting(false)
     setTitle("")
     setAmount("")
     setOpen(false)
@@ -74,8 +77,8 @@ function CreateItemDialog({
               required
             />
           </div>
-          <button type="submit" className={cn(buttonVariants(), "mt-2 w-full")}>
-            Create item
+          <button type="submit" disabled={submitting} className={cn(buttonVariants(), "mt-2 w-full")}>
+            {submitting ? "Creating…" : "Create item"}
           </button>
         </form>
       </DialogContent>

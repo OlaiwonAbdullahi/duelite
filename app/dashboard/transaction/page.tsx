@@ -11,16 +11,32 @@ import {
   type TransactionDetail,
 } from "@/components/dashboard/transaction-detail-dialog"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
-import { recentLedgerActivity } from "@/lib/dummy-data"
 
 function TransactionPage() {
-  const { role, spaces } = useDashboard()
+  const { role, spaces, items, members } = useDashboard()
   const isRep = role === "REP"
   const [selected, setSelected] = useState<TransactionDetail | null>(null)
 
   const transactions = spaces
     .flatMap((s) => s.items.filter((i) => i.status === "PAID").map((i) => ({ ...i, spaceName: s.name })))
     .sort((a, b) => (b.paidAt ?? "").localeCompare(a.paidAt ?? ""))
+
+  const incoming = members
+    .flatMap((member) =>
+      items.map((item) => {
+        const payment = member.payments[item.id]
+        if (payment?.status !== "PAID") return null
+        return {
+          id: `${member.id}-${item.id}`,
+          label: `${member.name} → ${item.title}`,
+          amount: item.amount,
+          txRef: payment.bmoniTxRef,
+          time: payment.paidAt,
+        }
+      })
+    )
+    .filter((tx): tx is NonNullable<typeof tx> => tx !== null)
+    .sort((a, b) => (b.time ?? "").localeCompare(a.time ?? ""))
 
   return (
     <div className="flex flex-col gap-10">
@@ -97,31 +113,39 @@ function TransactionPage() {
           <p className="mt-1 text-[13px] text-ink-soft">
             Recent ledger activity from your department&apos;s members.
           </p>
-          <Card className="mt-4 flex flex-col divide-y divide-hairline p-0">
-            {recentLedgerActivity.map((tx) => (
-              <button
-                key={tx.id}
-                type="button"
-                onClick={() =>
-                  setSelected({
-                    title: tx.label,
-                    amount: tx.amount,
-                    txRef: tx.txRef,
-                    time: tx.time,
-                  })
-                }
-                className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors duration-300 hover:bg-cloud/50 cursor-pointer"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-[14px] text-ink">{tx.label}</p>
-                  <p className="font-mono text-[12px] text-ink-soft">{tx.txRef}</p>
-                </div>
-                <span className="shrink-0 text-[14px] font-semibold text-ink">
-                  ₦{tx.amount.toLocaleString()}
-                </span>
-              </button>
-            ))}
-          </Card>
+          {incoming.length === 0 ? (
+            <EmptyState
+              icon={Wallet01Icon}
+              title="No payments yet"
+              description="Once members pay, their transfers will show up here."
+            />
+          ) : (
+            <Card className="mt-4 flex flex-col divide-y divide-hairline p-0">
+              {incoming.map((tx) => (
+                <button
+                  key={tx.id}
+                  type="button"
+                  onClick={() =>
+                    setSelected({
+                      title: tx.label,
+                      amount: tx.amount,
+                      txRef: tx.txRef,
+                      time: tx.time,
+                    })
+                  }
+                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors duration-300 hover:bg-cloud/50 cursor-pointer"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] text-ink">{tx.label}</p>
+                    <p className="font-mono text-[12px] text-ink-soft">{tx.txRef}</p>
+                  </div>
+                  <span className="shrink-0 text-[14px] font-semibold text-ink">
+                    ₦{tx.amount.toLocaleString()}
+                  </span>
+                </button>
+              ))}
+            </Card>
+          )}
         </div>
       )}
 

@@ -6,7 +6,7 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
-import type { PayStatus } from "@/lib/dummy-data"
+import type { PayStatus } from "@/lib/types"
 
 function StatusPill({
   status,

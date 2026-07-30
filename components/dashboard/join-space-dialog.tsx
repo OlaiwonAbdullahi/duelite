@@ -15,19 +15,19 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { buttonVariants } from "@/components/ui/button"
-import { joinableSpaceDirectory, type StudentSpace } from "@/lib/dummy-data"
+import { apiFetch, ApiError } from "@/lib/api-client"
+import type { StudentSpace } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-function JoinSpaceDialog({
-  joinedCodes,
-  onJoin,
-}: {
-  joinedCodes: string[]
-  onJoin: (space: StudentSpace) => void
-}) {
+interface JoinSpaceResponse {
+  space: StudentSpace
+}
+
+function JoinSpaceDialog({ onJoin }: { onJoin: (space: StudentSpace) => void }) {
   const [open, setOpen] = useState(false)
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [joinedSpace, setJoinedSpace] = useState<StudentSpace | null>(null)
 
   function reset() {
@@ -36,20 +36,21 @@ function JoinSpaceDialog({
     setJoinedSpace(null)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const normalized = code.trim().toUpperCase()
-    if (joinedCodes.includes(normalized)) {
-      setError("You're already in this space.")
-      return
-    }
-    const space = joinableSpaceDirectory[normalized]
-    if (!space) {
-      setError("We couldn't find that space. Check the code and try again.")
-      return
-    }
     setError(null)
-    setJoinedSpace(space)
+    setSubmitting(true)
+    try {
+      const { space } = await apiFetch<JoinSpaceResponse>("/api/spaces/join", {
+        method: "POST",
+        body: JSON.stringify({ joinCode: code.trim().toUpperCase() }),
+      })
+      setJoinedSpace(space)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -110,8 +111,8 @@ function JoinSpaceDialog({
                 autoFocus
               />
               {error && <p className="mt-1 text-[13px] text-destructive">{error}</p>}
-              <button type="submit" className={cn(buttonVariants(), "mt-4 w-full")}>
-                Join space
+              <button type="submit" disabled={submitting} className={cn(buttonVariants(), "mt-4 w-full")}>
+                {submitting ? "Joining…" : "Join space"}
               </button>
             </form>
           </>

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Alert01Icon,
   ArrowRight02Icon,
   CheckmarkCircle02Icon,
   Copy01Icon,
@@ -13,28 +14,42 @@ import { AuthShell } from "@/components/auth/auth-shell"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { buttonVariants } from "@/components/ui/button"
+import { apiFetch, ApiError } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
 
-const GENERATED_JOIN_CODE = "CSC300"
+interface CreateSpaceResponse {
+  space: { id: string; name: string; joinCode: string; walletAddress: string }
+}
 
 export default function NewSpacePage() {
   const router = useRouter()
   const [step, setStep] = useState<"form" | "created">("form")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [spaceName, setSpaceName] = useState("")
+  const [joinCode, setJoinCode] = useState("")
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError(null)
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      const { space } = await apiFetch<CreateSpaceResponse>("/api/spaces", {
+        method: "POST",
+        body: JSON.stringify({ name: spaceName }),
+      })
+      setJoinCode(space.joinCode)
       setStep("created")
-    }, 600)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleCopy() {
-    navigator.clipboard?.writeText(GENERATED_JOIN_CODE).catch(() => {})
+    navigator.clipboard?.writeText(joinCode).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -56,7 +71,7 @@ export default function NewSpacePage() {
             </p>
             <p className="mt-1 text-[13px] leading-[1.4] text-ink-soft">Join code</p>
             <p className="mt-1 font-mono text-[32px] font-semibold tracking-[0.15em] text-ink">
-              {GENERATED_JOIN_CODE}
+              {joinCode}
             </p>
           </div>
           <button
@@ -69,7 +84,7 @@ export default function NewSpacePage() {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/dashboard?role=rep")}
+            onClick={() => router.push("/dashboard")}
             className={cn(buttonVariants(), "w-full")}
           >
             Go to dashboard
@@ -98,6 +113,13 @@ export default function NewSpacePage() {
             required
           />
         </div>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-[13px] leading-[1.5] text-destructive">
+            <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <button
           type="submit"

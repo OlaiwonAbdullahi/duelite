@@ -10,18 +10,32 @@ import { JoinSpaceDialog } from "@/components/dashboard/join-space-dialog"
 import { MembersTable } from "@/components/dashboard/members-table"
 import { CreateItemDialog } from "@/components/dashboard/create-item-dialog"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
-import { repMembers, repSpace } from "@/lib/dummy-data"
+import { apiFetch, ApiError } from "@/lib/api-client"
 
 function SpacePage() {
-  const { role, spaces, setSpaces, items, setItems } = useDashboard()
+  const { role, spaces, refreshMyDues, managedSpace, items, members, refreshDashboard } = useDashboard()
   const isRep = role === "REP"
 
   const [copied, setCopied] = useState(false)
 
   function handleCopyCode() {
-    navigator.clipboard?.writeText(repSpace.joinCode).catch(() => {})
+    if (!managedSpace) return
+    navigator.clipboard?.writeText(managedSpace.joinCode).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
+  }
+
+  async function handleCreateItem(item: { title: string; amount: number }) {
+    if (!managedSpace) return
+    try {
+      await apiFetch("/api/items", {
+        method: "POST",
+        body: JSON.stringify({ spaceId: managedSpace.id, ...item }),
+      })
+      await refreshDashboard()
+    } catch (err) {
+      console.error(err instanceof ApiError ? err.message : err)
+    }
   }
 
   return (
@@ -34,10 +48,7 @@ function SpacePage() {
               Departments and groups you&apos;ve joined as a member.
             </p>
           </div>
-          <JoinSpaceDialog
-            joinedCodes={spaces.map((s) => s.joinCode)}
-            onJoin={(space) => setSpaces((prev) => [...prev, space])}
-          />
+          <JoinSpaceDialog onJoin={() => refreshMyDues()} />
         </div>
 
         <div className="mt-5">
@@ -46,12 +57,7 @@ function SpacePage() {
               icon={UserGroupIcon}
               title="Join your department to see your dues."
               description="Ask your course rep for their join code, then add it here."
-              action={
-                <JoinSpaceDialog
-                  joinedCodes={[]}
-                  onJoin={(space) => setSpaces((prev) => [...prev, space])}
-                />
-              }
+              action={<JoinSpaceDialog onJoin={() => refreshMyDues()} />}
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -63,11 +69,11 @@ function SpacePage() {
         </div>
       </div>
 
-      {isRep && (
+      {isRep && managedSpace && (
         <div>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-[16px] font-semibold text-ink">{repSpace.name}</h2>
+              <h2 className="text-[16px] font-semibold text-ink">{managedSpace.name}</h2>
               <p className="mt-1 text-[13px] text-ink-soft">The department you manage as course rep.</p>
             </div>
             <button
@@ -76,20 +82,16 @@ function SpacePage() {
               className="flex w-fit items-center gap-2 rounded-full bg-cloud px-4 py-2 font-mono text-[13px] font-medium text-ink transition-colors duration-300 hover:bg-hairline cursor-pointer"
             >
               <HugeiconsIcon icon={Copy01Icon} size={14} />
-              {copied ? "Copied!" : repSpace.joinCode}
+              {copied ? "Copied!" : managedSpace.joinCode}
             </button>
           </div>
 
           <div className="mt-4 flex items-center justify-between">
             <h3 className="text-[14px] font-semibold text-ink">Members</h3>
-            <CreateItemDialog
-              onCreate={(item) =>
-                setItems((prev) => [...prev, { id: `item_${Date.now()}`, ...item }])
-              }
-            />
+            <CreateItemDialog onCreate={handleCreateItem} />
           </div>
           <div className="mt-3">
-            <MembersTable members={repMembers} items={items} />
+            <MembersTable members={members} items={items} />
           </div>
         </div>
       )}

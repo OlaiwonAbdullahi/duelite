@@ -13,10 +13,9 @@ import {
 
 import { StatTile } from "@/components/dashboard/stat-tile"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
-import { repMembers, anomalyAlerts } from "@/lib/dummy-data"
 
 function OverviewPage() {
-  const { role, studentBalance, spaces, items } = useDashboard()
+  const { role, studentBalance, spaces, totals, anomalies } = useDashboard()
   const isRep = role === "REP"
 
   const outstanding = spaces
@@ -29,21 +28,7 @@ function OverviewPage() {
     .filter((i) => i.status === "PAID")
     .reduce((sum, i) => sum + i.amount, 0)
 
-  const totalExpected = repMembers.length * items.reduce((sum, i) => sum + i.amount, 0)
-  const totalCollected = repMembers.reduce(
-    (sum, member) =>
-      sum +
-      items.reduce((s, item) => {
-        const payment = member.payments[item.id]
-        return payment?.status === "PAID" ? s + item.amount : s
-      }, 0),
-    0
-  )
-  const verifiedCount = repMembers.reduce(
-    (sum, member) => sum + items.filter((item) => member.payments[item.id]?.verified).length,
-    0
-  )
-  const repOutstanding = totalExpected - totalCollected
+  const repOutstanding = totals.totalExpected - totals.totalCollected
 
   return (
     <div className="flex flex-col gap-10">
@@ -88,9 +73,9 @@ function OverviewPage() {
             Stats for the department you manage as course rep.
           </p>
 
-          {anomalyAlerts.length > 0 && (
+          {anomalies.length > 0 && (
             <div className="mt-4 flex flex-col gap-2 rounded-lg border border-accent-gold/30 bg-accent-gold/10 p-4">
-              {anomalyAlerts.map((alert) => (
+              {anomalies.map((alert) => (
                 <div key={alert.id} className="flex items-start gap-2.5">
                   <HugeiconsIcon
                     icon={Alert01Icon}
@@ -108,15 +93,15 @@ function OverviewPage() {
           )}
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile label="Collected" value={`₦${totalCollected.toLocaleString()}`} icon={MoneyReceive01Icon} />
+            <StatTile label="Collected" value={`₦${totals.totalCollected.toLocaleString()}`} icon={MoneyReceive01Icon} />
             <StatTile
               label="Outstanding"
               value={`₦${repOutstanding.toLocaleString()}`}
               icon={Alert01Icon}
               iconColor="var(--accent-gold)"
             />
-            <StatTile label="Verified on ledger" value={`${verifiedCount}`} icon={CheckmarkCircle02Icon} />
-            <StatTile label="Members" value={`${repMembers.length}`} icon={UserGroupIcon} />
+            <StatTile label="Verified on ledger" value={`${totals.verifiedCount}`} icon={CheckmarkCircle02Icon} />
+            <StatTile label="Members" value={`${totals.memberCount}`} icon={UserGroupIcon} />
           </div>
         </div>
       )}

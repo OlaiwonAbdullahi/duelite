@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react"
 import {
   ArrowDataTransferHorizontalIcon,
@@ -24,8 +24,7 @@ const NAV_ITEMS: { href: string; label: string; icon: HugeiconsIconProps["icon"]
 
 function DashboardNav() {
   const pathname = usePathname()
-  const router = useRouter()
-  const { name, subtitle } = useDashboard()
+  const { name, subtitle, logout } = useDashboard()
 
   return (
     <aside className="hidden w-56 shrink-0 border-r border-hairline bg-canvas sm:block">
@@ -65,7 +64,7 @@ function DashboardNav() {
           </div>
           <button
             type="button"
-            onClick={() => router.push("/login")}
+            onClick={() => logout()}
             className="flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 font-sans text-[13px] font-medium text-ink-soft transition-colors duration-300 hover:bg-cloud/60 hover:text-ink"
           >
             <HugeiconsIcon icon={Logout01Icon} size={17} />
@@ -79,7 +78,7 @@ function DashboardNav() {
 
 function DashboardMobileNav() {
   const pathname = usePathname()
-  const router = useRouter()
+  const { logout } = useDashboard()
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-hairline bg-canvas/95 backdrop-blur-md sm:hidden">
@@ -105,7 +104,7 @@ function DashboardMobileNav() {
       })}
       <button
         type="button"
-        onClick={() => router.push("/login")}
+        onClick={() => logout()}
         className="flex flex-1 cursor-pointer flex-col items-center gap-1 py-2.5 font-sans text-[11px] font-medium text-ink-soft transition-colors duration-300"
       >
         <HugeiconsIcon icon={Logout01Icon} size={18} />

@@ -3,7 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowRight02Icon, Alert01Icon } from "@hugeicons/core-free-icons"
 
 import { Card } from "@/components/ui/card"
-import type { StudentSpace } from "@/lib/dummy-data"
+import type { StudentSpace } from "@/lib/types"
 
 function SpaceCard({ space }: { space: StudentSpace }) {
   const outstanding = space.items

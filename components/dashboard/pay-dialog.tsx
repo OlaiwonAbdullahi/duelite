@@ -16,7 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { buttonVariants } from "@/components/ui/button"
-import type { DuesItem } from "@/lib/dummy-data"
+import type { DuesItem } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 function PayDialog({
@@ -30,26 +30,32 @@ function PayDialog({
   spaceName: string | null
   balance: number
   onOpenChange: (open: boolean) => void
-  onConfirm: () => void
+  onConfirm: () => Promise<{ ok: boolean; error?: string }>
 }) {
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const open = item !== null
   const insufficient = item ? balance < item.amount : false
 
-  function handleConfirm() {
+  async function handleConfirm() {
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
-      onConfirm()
-    }, 700)
+    setError(null)
+    const result = await onConfirm()
+    setSubmitting(false)
+    if (!result.ok) {
+      setError(result.error ?? "Payment failed. Try again.")
+    }
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) onOpenChange(false)
+        if (!next) {
+          onOpenChange(false)
+          setError(null)
+        }
       }}
     >
       <DialogContent>
@@ -122,6 +128,13 @@ function PayDialog({
                   This moves ₦{item.amount.toLocaleString()} cNGN from your wallet to{" "}
                   {spaceName}&apos;s wallet. Wallet balance: ₦{balance.toLocaleString()}.
                 </p>
+              )}
+
+              {error && (
+                <div className="mt-4 flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-[13px] leading-[1.5] text-destructive">
+                  <HugeiconsIcon icon={Alert01Icon} size={16} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
               )}
 
               <button

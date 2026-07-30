@@ -11,10 +11,11 @@ import { StatusPill } from "@/components/dashboard/status-pill"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { PayDialog } from "@/components/dashboard/pay-dialog"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
-import { fakeTxRef, cn } from "@/lib/utils"
+import { apiFetch, ApiError } from "@/lib/api-client"
+import { cn } from "@/lib/utils"
 
 function SpaceDetail({ spaceId }: { spaceId: string }) {
-  const { spaces, setSpaces, studentBalance, setStudentBalance } = useDashboard()
+  const { spaces, studentBalance, refreshMyDues } = useDashboard()
   const [payItemId, setPayItemId] = useState<string | null>(null)
 
   const space = spaces.find((s) => s.id === spaceId) ?? null
@@ -34,46 +35,18 @@ function SpaceDetail({ spaceId }: { spaceId: string }) {
 
   const activeItem = space.items.find((i) => i.id === payItemId) ?? null
 
-  function handleConfirmPay() {
-    if (!activeItem) return
-    const txRef = fakeTxRef()
-    const amount = activeItem.amount
-    const itemId = activeItem.id
-
-    setSpaces((prev) =>
-      prev.map((s) =>
-        s.id !== spaceId
-          ? s
-          : {
-              ...s,
-              items: s.items.map((i) =>
-                i.id !== itemId
-                  ? i
-                  : {
-                      ...i,
-                      status: "PAID",
-                      verified: false,
-                      bmoniTxRef: txRef,
-                      paidAt: new Date().toISOString(),
-                    }
-              ),
-            }
-      )
-    )
-    setStudentBalance((prev) => prev - amount)
-
-    setTimeout(() => {
-      setSpaces((prev) =>
-        prev.map((s) =>
-          s.id !== spaceId
-            ? s
-            : {
-                ...s,
-                items: s.items.map((i) => (i.id !== itemId ? i : { ...i, verified: true })),
-              }
-        )
-      )
-    }, 2200)
+  async function handleConfirmPay(): Promise<{ ok: boolean; error?: string }> {
+    if (!activeItem) return { ok: false, error: "No item selected" }
+    try {
+      await apiFetch("/api/pay", {
+        method: "POST",
+        body: JSON.stringify({ itemId: activeItem.id }),
+      })
+      await refreshMyDues()
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : "Payment failed. Try again." }
+    }
   }
 
   return (

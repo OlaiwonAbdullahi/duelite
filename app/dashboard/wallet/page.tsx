@@ -8,10 +8,9 @@ import { Card } from "@/components/ui/card"
 import { StatTile } from "@/components/dashboard/stat-tile"
 import { PayoutCard } from "@/components/dashboard/payout-card"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
-import { currentStudent } from "@/lib/dummy-data"
 
 function WalletPage() {
-  const { role, studentBalance, spaces, repBalance, setRepBalance } = useDashboard()
+  const { role, studentBalance, spaces, walletAddress, managedSpace, repBalance, refreshDashboard } = useDashboard()
   const isRep = role === "REP"
   const [copied, setCopied] = useState(false)
 
@@ -21,7 +20,8 @@ function WalletPage() {
     .reduce((sum, i) => sum + i.amount, 0)
 
   function handleCopyAddress() {
-    navigator.clipboard?.writeText(currentStudent.walletAddress).catch(() => {})
+    if (!walletAddress) return
+    navigator.clipboard?.writeText(walletAddress).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -50,14 +50,16 @@ function WalletPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCopyAddress}
-              className="flex w-fit items-center gap-2 rounded-full bg-cloud px-3 py-1.5 font-mono text-[12px] font-medium text-ink-soft transition-colors duration-300 hover:bg-hairline cursor-pointer"
-            >
-              <HugeiconsIcon icon={Copy01Icon} size={13} />
-              {copied ? "Copied!" : currentStudent.walletAddress}
-            </button>
+            {walletAddress && (
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className="flex w-fit items-center gap-2 rounded-full bg-cloud px-3 py-1.5 font-mono text-[12px] font-medium text-ink-soft transition-colors duration-300 hover:bg-hairline cursor-pointer"
+              >
+                <HugeiconsIcon icon={Copy01Icon} size={13} />
+                {copied ? "Copied!" : walletAddress}
+              </button>
+            )}
           </Card>
 
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
@@ -71,14 +73,14 @@ function WalletPage() {
         </div>
       </div>
 
-      {isRep && (
+      {isRep && managedSpace && (
         <div>
           <h2 className="text-[16px] font-semibold text-ink">Space payout</h2>
           <p className="mt-1 text-[13px] text-ink-soft">
             Withdraw dues collected by your department to your bank.
           </p>
           <div className="mt-4 max-w-sm">
-            <PayoutCard balance={repBalance} onWithdrawn={() => setRepBalance(0)} />
+            <PayoutCard balance={repBalance} onWithdrawn={refreshDashboard} />
           </div>
         </div>
       )}
