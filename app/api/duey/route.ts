@@ -25,7 +25,10 @@ export async function GET() {
   })
 
   return NextResponse.json({
-    messages: rows.map((row) => ({ role: row.role === "USER" ? "user" : "assistant", content: row.content })),
+    messages: rows.map((row: { role: "USER" | "ASSISTANT"; content: string | null }) => ({
+      role: row.role === "USER" ? "user" : "assistant",
+      content: row.content,
+    })),
   })
 }
 
