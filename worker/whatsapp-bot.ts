@@ -23,7 +23,7 @@ import qrcode from "qrcode-terminal"
 import { prisma } from "../lib/prisma"
 import { runDuey } from "../lib/duey/run"
 import { normalizeNigerianPhone } from "../lib/identifiers"
-import { useMongoAuthState } from "./mongo-auth-state"
+import { loadMongoAuthState } from "./mongo-auth-state"
 
 const logger = pino({ level: process.env.LOG_LEVEL ?? "info" })
 
@@ -40,7 +40,7 @@ function fromJid(jid: string): string {
 }
 
 async function connect() {
-  const { state, saveCreds } = await useMongoAuthState()
+  const { state, saveCreds } = await loadMongoAuthState()
   const { version } = await fetchLatestBaileysVersion()
 
   sock = makeWASocket({

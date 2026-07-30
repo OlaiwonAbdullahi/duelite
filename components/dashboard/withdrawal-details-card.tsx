@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { buttonVariants } from "@/components/ui/button"
 import { apiFetch, ApiError } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
@@ -49,7 +49,26 @@ function WithdrawalDetailsCard() {
       <h3 className="text-[14px] font-semibold text-ink">Withdrawal details</h3>
       <p className="mt-1 text-[12px] leading-[1.5] text-ink-soft">Verify and save the Nigerian account that receives department payouts.</p>
       <form onSubmit={saveDetails} className="mt-4 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5"><Label htmlFor="withdrawal-bank">Bank</Label><Select id="withdrawal-bank" value={bankCode} onChange={(event) => setBankCode(event.target.value)} required><option value="" disabled>Select your bank</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</Select></div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="withdrawal-bank">Bank</Label>
+          <Select
+            value={bankCode}
+            onValueChange={(value) => setBankCode(value ?? "")}
+            disabled={banks.length === 0}
+            required
+          >
+            <SelectTrigger id="withdrawal-bank" className="h-12 w-full rounded-lg border-hairline bg-canvas px-4 text-[15px] text-ink">
+              <SelectValue placeholder={banks.length === 0 ? "Loading banks…" : "Select your bank"} />
+            </SelectTrigger>
+            <SelectContent>
+              {banks.map((bank) => (
+                <SelectItem key={bank.code} value={bank.code}>
+                  {bank.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex flex-col gap-1.5"><Label htmlFor="withdrawal-account">Account number</Label><Input id="withdrawal-account" value={accountNumber} onChange={(event) => setAccountNumber(event.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" placeholder="0123456789" required /></div>
         <button type="submit" disabled={saving} className={cn(buttonVariants(), "w-full")}>{saving ? "Verifying..." : "Save withdrawal details"}</button>
       </form>

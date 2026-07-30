@@ -69,7 +69,7 @@ function OverviewPage() {
             <span className="font-medium text-ink">Prefer WhatsApp?</span> Text
             Duey at{" "}
             <span className="font-mono font-medium text-ink">
-              +1 415 523 8886
+              0902 757 1545
             </span>{" "}
             in English or Pidgin.
           </p>

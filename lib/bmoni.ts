@@ -251,8 +251,12 @@ export async function getBalances(userId: string) {
   return bmoniRequest<BmoniResponse>("GET", `/v1/users/${userId}/smart-wallets/account/balances`)
 }
 
-export async function getTransactions(userId: string) {
-  return bmoniRequest<BmoniResponse>("GET", `/v1/users/${userId}/smart-wallets/account/transactions`)
+// smartWalletId is required — omitting it 400s with "smartWalletId must be a UUID".
+export async function getTransactions(userId: string, smartWalletId: string) {
+  return bmoniRequest<BmoniResponse>(
+    "GET",
+    `/v1/users/${userId}/smart-wallets/account/transactions?smartWalletId=${smartWalletId}`
+  )
 }
 
 // Confirmed live shape: { smartAccountAddress, balances: [{ smartWalletId, currency, balance, error }] }.

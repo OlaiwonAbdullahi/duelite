@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { buttonVariants } from "@/components/ui/button"
 import { apiFetch, ApiError } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
@@ -146,19 +146,21 @@ function PayoutCard({
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="bankCode">Bank</Label>
                   <Select
-                    id="bankCode"
                     value={bankCode}
-                    onChange={(e) => setBankCode(e.target.value)}
+                    onValueChange={(value) => setBankCode(value ?? "")}
+                    disabled={banks.length === 0}
                     required
                   >
-                    <option value="" disabled>
-                      {banks.length === 0 ? "Loading banks…" : "Select your bank"}
-                    </option>
-                    {banks.map((bank) => (
-                      <option key={bank.code} value={bank.code}>
-                        {bank.name}
-                      </option>
-                    ))}
+                    <SelectTrigger id="bankCode" className="h-12 w-full rounded-lg border-hairline bg-canvas px-4 text-[15px] text-ink">
+                      <SelectValue placeholder={banks.length === 0 ? "Loading banks…" : "Select your bank"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {banks.map((bank) => (
+                        <SelectItem key={bank.code} value={bank.code}>
+                          {bank.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
 

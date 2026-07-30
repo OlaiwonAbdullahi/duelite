@@ -26,8 +26,9 @@ export function generateSyntheticPhone(): string {
 
 // Canonicalizes any Nigerian phone input ("0801...", "+234801...", "234801...")
 // to "+234801..." — matching generateSyntheticPhone()'s format above (also
-// what gets sent to BMONI as the user's phoneNumber) and Twilio's WhatsApp
-// `From` field, so incoming messages can be matched with a plain findUnique.
+// what gets sent to BMONI as the user's phoneNumber) and the WhatsApp JID
+// the Baileys worker derives inbound messages from, so incoming messages can
+// be matched with a plain findUnique.
 export function normalizeNigerianPhone(input: string): string {
   const digits = input.replace(/\D/g, "")
   if (digits.startsWith("234")) return `+${digits}`

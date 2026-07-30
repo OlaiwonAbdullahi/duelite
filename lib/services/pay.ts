@@ -218,7 +218,7 @@ export async function payDue(user: User, itemId: string): Promise<PayDueResult> 
 
   try {
     const ownerPrivateKey = decryptSecret(user.ownerKeyEnc!) as Hex
-    const result = await transferCngn({
+    const outcome = await transferCngn({
       userId: user.bmoniUserId!,
       smartWalletId: user.walletId!,
       toAddress: item.spaceWalletAddress,
@@ -226,13 +226,25 @@ export async function payDue(user: User, itemId: string): Promise<PayDueResult> 
       ownerPrivateKey,
     })
 
-    const status = String(result?.proposal?.status ?? result?.data?.status ?? result?.status ?? "")
+    // A signature was submitted but we couldn't confirm completion in
+    // time — the transfer is executing on BMONI's side regardless, so this
+    // is NOT a failure. Leave the payment PENDING (never FAILED here) so
+    // the student isn't told to retry a transfer that may already be
+    // moving their money; /api/reconcile picks these up once BMONI's
+    // ledger reflects the completed transfer.
+    if (outcome.pending) {
+      await prisma.payment.update({ where: { id: payment.id }, data: { bmoniTxRef: outcome.proposalId } })
+      return {
+        ok: false,
+        status: 202,
+        error: "Payment submitted and is confirming on the ledger. Check back in a moment before retrying.",
+        payment,
+      }
+    }
+
+    const status = String(outcome.proposal?.proposal?.status ?? "")
     const txRef = String(
-      result?.proposal?.blockchainTxHash ??
-        result?.proposal?.id ??
-        result?.data?.proposalId ??
-        result?.proposalId ??
-        payment.id
+      outcome.proposal?.proposal?.blockchainTxHash ?? outcome.proposal?.proposal?.id ?? outcome.proposalId
     )
 
     if (status !== "COMPLETED") {
@@ -255,7 +267,10 @@ export async function payDue(user: User, itemId: string): Promise<PayDueResult> 
 
     return { ok: true, payment: paid }
   } catch (err) {
-    console.error("payDue: transferCngn failed:", err)
+    // Only reachable for failures *before* a signature was ever submitted
+    // (create proposal / approve / fetch sign-payload / sign itself) —
+    // nothing was executed on BMONI's side, so FAILED is accurate here.
+    console.error("payDue: transfer failed before signing:", err)
     const message = err instanceof Error ? err.message : String(err)
     await prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } })
     return { ok: false, status: 502, error: `Payment failed: ${message}` }

@@ -28,7 +28,7 @@ async function removeKey(id: string): Promise<void> {
   await prisma.whatsAppAuthKey.deleteMany({ where: { id } })
 }
 
-export async function useMongoAuthState(): Promise<{
+export async function loadMongoAuthState(): Promise<{
   state: AuthenticationState
   saveCreds: () => Promise<void>
 }> {

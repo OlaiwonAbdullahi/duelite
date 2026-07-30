@@ -17,7 +17,7 @@ export async function reconcileSpace(spaceId: string) {
 
   let txRefs: Set<string>
   try {
-    const response = await getTransactions(space.bmoniUserId)
+    const response = await getTransactions(space.bmoniUserId, space.walletId)
     const list: Record<string, unknown>[] =
       response?.transactions ?? response?.data ?? (Array.isArray(response) ? response : [])
     txRefs = new Set(

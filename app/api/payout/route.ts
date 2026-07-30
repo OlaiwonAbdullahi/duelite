@@ -61,19 +61,32 @@ export async function POST(request: NextRequest) {
     })
 
     const ownerPrivateKey = decryptSecret(space.ownerKeyEnc) as Hex
-    const result = await offrampNigeria(space.bmoniUserId, space.walletId, {
+    const outcome = await offrampNigeria(space.bmoniUserId, space.walletId, {
       bankAccountId,
       fromAmount: amount.toFixed(2),
       ownerPrivateKey,
     })
 
-    const status = String(result?.data?.status ?? result?.status ?? "")
+    // A signature was submitted but we couldn't confirm the outcome in
+    // time — the withdrawal is executing on BMONI's side regardless, so
+    // this is NOT a failure. Don't let the rep think it's safe to retry.
+    if (outcome.pending) {
+      return NextResponse.json({
+        reference: outcome.proposalId,
+        accountHolderName,
+        pending: true,
+      })
+    }
+
+    const status = String(outcome.proposal?.proposal?.status ?? "")
     if (status !== "COMPLETED") {
       return NextResponse.json({ error: `Withdrawal didn't complete (status: ${status || "unknown"}).` }, { status: 502 })
     }
 
     return NextResponse.json({
-      reference: String(result?.data?.proposalId ?? result?.proposalId ?? ""),
+      reference: String(
+        outcome.proposal?.proposal?.blockchainTxHash ?? outcome.proposal?.proposal?.id ?? outcome.proposalId
+      ),
       accountHolderName,
     })
   } catch (err) {
