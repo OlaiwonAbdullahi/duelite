@@ -1,17 +1,29 @@
 "use client"
 
+import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Copy01Icon, MoneyReceive01Icon, Wallet01Icon } from "@hugeicons/core-free-icons"
+import { Copy01Icon, MoneyReceive01Icon, Refresh01Icon, Wallet01Icon } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 
 import { StatTile } from "@/components/dashboard/stat-tile"
 import { PayoutCard } from "@/components/dashboard/payout-card"
 import { WithdrawalDetailsCard } from "@/components/dashboard/withdrawal-details-card"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
+import { cn } from "@/lib/utils"
 
 function WalletPage() {
-  const { role, studentBalance, spaces, walletAddress, managedSpace, repBalance, refreshDashboard } = useDashboard()
+  const {
+    role,
+    studentBalance,
+    spaces,
+    walletAddress,
+    managedSpace,
+    repBalance,
+    refreshMyDues,
+    refreshDashboard,
+  } = useDashboard()
   const isRep = role === "REP"
+  const [refreshing, setRefreshing] = useState(false)
 
   const paidTotal = spaces
     .flatMap((s) => s.items)
@@ -24,10 +36,34 @@ function WalletPage() {
     toast.success("Wallet address copied")
   }
 
+  async function handleRefresh() {
+    setRefreshing(true)
+    try {
+      await Promise.all([refreshMyDues(), ...(isRep ? [refreshDashboard()] : [])])
+      toast.success("Wallet refreshed")
+    } catch {
+      toast.error("Couldn't refresh — try again.")
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-10">
       <div>
-        <h1 className="text-[24px] font-semibold text-ink">Wallet</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-[24px] font-semibold text-ink">Wallet</h1>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            aria-label="Refresh wallet"
+            className="flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1.5 font-sans text-[12px] font-medium text-ink-soft transition-colors duration-300 hover:bg-cloud hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            <HugeiconsIcon icon={Refresh01Icon} size={14} className={cn(refreshing && "animate-spin")} />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
         <p className="mt-1 text-[14px] text-ink-soft">
           Your personal BMONI-secured wallet, funded by bank transfer.
         </p>

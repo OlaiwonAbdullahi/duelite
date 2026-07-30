@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Space name is required" }, { status: 400 })
   }
 
-  const joinCode = await generateJoinCode(name)
+  const joinCode = await generateJoinCode()
 
   let provisioned
   try {

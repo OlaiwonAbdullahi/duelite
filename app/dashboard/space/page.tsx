@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { SpaceCard } from "@/components/dashboard/space-card"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { JoinSpaceDialog } from "@/components/dashboard/join-space-dialog"
-import { MembersTable } from "@/components/dashboard/members-table"
+import { MembersDuesPanel } from "@/components/dashboard/members-dues-panel"
 import { CreateItemDialog } from "@/components/dashboard/create-item-dialog"
 import { useDashboard } from "@/components/dashboard/dashboard-context"
 import { apiFetch, ApiError } from "@/lib/api-client"
@@ -89,11 +89,19 @@ function SpacePage() {
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <h3 className="text-[14px] font-semibold text-ink">Members</h3>
+            <h3 className="text-[14px] font-semibold text-ink">Members &amp; dues</h3>
             <CreateItemDialog onCreate={handleCreateItem} />
           </div>
           <div className="mt-3">
-            <MembersTable members={members} items={items} />
+            {members.length === 0 ? (
+              <EmptyState
+                icon={UserGroupIcon}
+                title="No members yet"
+                description="Share your join code so students can join and start paying dues."
+              />
+            ) : (
+              <MembersDuesPanel spaceName={managedSpace.name} members={members} items={items} />
+            )}
           </div>
         </div>
       )}

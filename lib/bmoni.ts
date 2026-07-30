@@ -10,11 +10,9 @@
 //     request/response below, and several field names here were corrected
 //     from BMONI's own 400 validation errors during that process.
 //
-// Still UNCONFIRMED: the wallet-to-wallet cNGN transfer used for `payDues()`.
-// It isn't in the public docs (details.md flags it as "endpoint from BMONI
-// desk"). transferCngn() below is a best guess based on the closest
-// documented endpoint (crypto withdrawal to an external address) — verify
-// with BMONI staff before relying on it.
+// Wallet-to-wallet cNGN transfer (used by `payDues()`) is confirmed against
+// https://bkey.mintlify.app/api-reference/transfers — see the section above
+// createTransferProposal() below for the exact flow.
 
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import type { Hex } from "viem"
@@ -269,18 +267,22 @@ export function extractNgnBalance(balancesResponse: BmoniResponse): number {
 
 // ---------------------------------------------------------------------------
 // Proposal signing — BMONI's generic pattern for any money-movement action
-// on a smart wallet (confirmed via the Nigeria withdrawal flow docs): the
-// action-specific endpoint (e.g. offramp/nigeria) returns a *proposal*
+// on a smart wallet: the action-specific endpoint (e.g. offramp/nigeria, or
+// smart-wallets/{id}/proposals for a transfer) returns a *proposal*
 // (status PENDING_APPROVALS), not a completed result. You then:
-//   1. GET  the EIP-712 sign payload for that proposal
-//   2. sign it with the wallet's registered owner key (viem, not the BMONI
+//   1. POST approve on the proposal (https://bkey.mintlify.app/api-reference/transfers)
+//   2. GET  the EIP-712 sign payload for that proposal
+//   3. sign it with the wallet's registered owner key (viem, not the BMONI
 //      SDK — same tradeoff as the owner-proof challenge, see details.md §2)
-//   3. POST the hex signature back
-//   4. poll GET the proposal until it reaches a terminal status
-// This pattern is presumed generic across proposal-creating endpoints (so
-// it should also apply to the still-unconfirmed wallet-to-wallet transfer),
-// but has only been exercised here via the documented offramp flow.
+//   4. POST the hex signature back
+//   5. poll GET the proposal until it reaches a terminal status
+// Note steps 2-5 take {userId, proposalId} only — smartWalletId is NOT part
+// of those paths, confirmed against the docs above.
 // ---------------------------------------------------------------------------
+
+export async function approveProposal(userId: string, proposalId: string) {
+  return bmoniRequest<BmoniResponse>("POST", `/v1/users/${userId}/smart-wallets/proposals/${proposalId}/approve`)
+}
 
 export async function getProposalSignPayload(userId: string, proposalId: string) {
   return bmoniRequest<BmoniResponse>("GET", `/v1/users/${userId}/smart-wallets/proposals/${proposalId}/sign-payload`)
@@ -294,6 +296,14 @@ export async function signProposal(userId: string, proposalId: string, signature
 
 export async function getProposal(userId: string, proposalId: string) {
   return bmoniRequest<BmoniResponse>("GET", `/v1/users/${userId}/smart-wallets/proposals/${proposalId}`)
+}
+
+// Proposal-creating endpoints (transfer, offramp) wrap the new proposal as
+// { proposal: { id } } — this also tries a couple of other envelope shapes
+// seen in earlier, less-confirmed responses, so a shape change degrades
+// gracefully rather than crashing outright.
+function extractProposalId(response: BmoniResponse): string | undefined {
+  return response?.proposal?.id ?? response?.data?.proposalId ?? response?.proposalId
 }
 
 function sleep(ms: number) {
@@ -313,28 +323,35 @@ export async function pollProposalStatus(
 
   while (Date.now() - start < timeout) {
     const proposal = await getProposal(userId, proposalId)
-    const status = String(proposal?.data?.status ?? proposal?.status ?? "")
+    const status = String(proposal?.proposal?.status ?? proposal?.data?.status ?? proposal?.status ?? "")
     if (TERMINAL_PROPOSAL_STATUSES.includes(status)) return proposal
     await sleep(interval)
   }
   throw new Error(`Proposal ${proposalId} did not reach a terminal status within ${timeout}ms`)
 }
 
-// Signs whatever shape the sign-payload endpoint returns. Exact shape is
-// unconfirmed — tries EIP-712 typed data first (domain/types/message, the
-// convention the docs' "sign the EIP-712 payload" language implies), then
-// falls back to a raw hash or plain message if that's what comes back.
-// Logs the raw payload either way so the real shape is visible on first run.
+// Signs the sign-payload response — confirmed live shape is
+// { signingPayloadHash, typedData: { domain, types, primaryType, message },
+// signatureExpiresAt, proposalStatus }. BMONI's /sign endpoint verifies a
+// raw ECDSA signature over signingPayloadHash directly (not a full EIP-712
+// signTypedData signature over the typedData wrapper, and not the on-chain
+// SignatureWrapper(ownerIndex, signatureData) ABI encoding either — both
+// were tried and rejected). typedData/message fallbacks are kept in case a
+// future response omits signingPayloadHash.
 export async function signProposalPayload(ownerPrivateKey: Hex, payload: BmoniResponse): Promise<string> {
   const account = privateKeyToAccount(ownerPrivateKey)
   const body = payload?.data ?? payload
 
-  if (body?.domain && body?.types && body?.message) {
+  if (body?.signingPayloadHash) {
+    return account.sign({ hash: body.signingPayloadHash })
+  }
+  const typedData = body?.typedData ?? body
+  if (typedData?.domain && typedData?.types && typedData?.message) {
     return account.signTypedData({
-      domain: body.domain,
-      types: body.types,
-      primaryType: body.primaryType,
-      message: body.message,
+      domain: typedData.domain,
+      types: typedData.types,
+      primaryType: typedData.primaryType,
+      message: typedData.message,
     })
   }
   if (body?.hash) {
@@ -349,10 +366,11 @@ export async function signProposalPayload(ownerPrivateKey: Hex, payload: BmoniRe
   )
 }
 
-// Runs the full propose -> sign-payload -> sign -> poll cycle for a proposal
+// Runs the full approve -> sign-payload -> sign -> poll cycle for a proposal
 // that's already been created (i.e. call this with the proposalId from an
 // offramp/transfer/etc response).
 export async function signAndCompleteProposal(userId: string, proposalId: string, ownerPrivateKey: Hex) {
+  await approveProposal(userId, proposalId)
   const signPayload = await getProposalSignPayload(userId, proposalId)
   const signature = await signProposalPayload(ownerPrivateKey, signPayload)
   await signProposal(userId, proposalId, signature)
@@ -360,14 +378,10 @@ export async function signAndCompleteProposal(userId: string, proposalId: string
 }
 
 // ---------------------------------------------------------------------------
-// Wallet -> wallet cNGN transfer (payDues)
-// STILL UNCONFIRMED — not in the public docs; details.md explicitly flags
-// this as "endpoint from BMONI desk". Given the offramp flow above returns
-// a proposal rather than completing in one call, a plain transfer almost
-// certainly follows the same propose -> sign -> poll pattern (wired via
-// signAndCompleteProposal above) — but the *create proposal* call itself
-// (path + body) is still a guess. Verify with BMONI staff before relying
-// on this.
+// Wallet -> wallet cNGN transfer (payDues), confirmed against
+// https://bkey.mintlify.app/api-reference/transfers — creates a TRANSFER
+// proposal, then drives it through the same approve -> sign -> poll cycle
+// as offramp via signAndCompleteProposal above.
 // ---------------------------------------------------------------------------
 
 export async function createTransferProposal(params: {
@@ -376,10 +390,13 @@ export async function createTransferProposal(params: {
   toAddress: string
   amount: string
 }) {
-  return bmoniRequest<BmoniResponse>("POST", `/v1/users/${params.userId}/smart-wallets/${params.smartWalletId}/transfer`, {
-    currency: "CNGN",
-    toAddress: params.toAddress,
-    fromAmount: params.amount,
+  return bmoniRequest<BmoniResponse>("POST", `/v1/users/${params.userId}/smart-wallets/${params.smartWalletId}/proposals`, {
+    proposal: {
+      type: "TRANSFER",
+      toAddress: params.toAddress,
+      amount: Number(params.amount).toFixed(2),
+      currency: "CNGN",
+    },
   })
 }
 
@@ -391,7 +408,7 @@ export async function transferCngn(params: {
   ownerPrivateKey: Hex
 }) {
   const proposal = await createTransferProposal(params)
-  const proposalId: string = proposal?.data?.proposalId ?? proposal?.proposalId
+  const proposalId = extractProposalId(proposal)
   if (!proposalId) {
     throw new Error(`No proposalId in transfer response: ${JSON.stringify(proposal)}`)
   }
@@ -466,7 +483,7 @@ export async function offrampNigeria(
     bankAccountId: params.bankAccountId,
     fromAmount: params.fromAmount,
   })
-  const proposalId: string = proposal?.data?.proposalId ?? proposal?.proposalId
+  const proposalId = extractProposalId(proposal)
   if (!proposalId) {
     throw new Error(`No proposalId in offramp response: ${JSON.stringify(proposal)}`)
   }

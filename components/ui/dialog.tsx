@@ -88,7 +88,7 @@ function DialogContent({
           role="dialog"
           aria-modal="true"
           className={cn(
-            "w-full max-w-md rounded-lg border border-hairline bg-paper p-6 shadow-xl outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+            "relative w-full max-w-md rounded-lg border border-hairline bg-paper p-6 shadow-xl outline-none transition-all duration-300 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             className
           )}
           {...props}

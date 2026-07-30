@@ -106,6 +106,93 @@ export async function previewDue(user: User, itemId: string): Promise<PreviewDue
   }
 }
 
+export interface PayDuesResult {
+  ok: boolean
+  status: number
+  error?: string
+  payments: Payment[]
+  failed: { itemId: string; error: string }[]
+}
+
+// Pays several items in one go. Validates membership on every item and
+// checks the combined total against the live balance up front — so the
+// student isn't left with 2 of 3 items paid because the 3rd couldn't be
+// covered — then executes each transfer through payDue() sequentially,
+// since balance genuinely drops after each transfer completes.
+export async function payDues(user: User, itemIds: string[]): Promise<PayDuesResult> {
+  if (itemIds.length === 0) {
+    return { ok: false, status: 400, error: "No items selected", payments: [], failed: [] }
+  }
+
+  if (!user.provisioned || !user.bmoniUserId || !user.walletId || !user.ownerKeyEnc) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Your account is still being set up. Try again in a moment.",
+      payments: [],
+      failed: [],
+    }
+  }
+
+  const items = await prisma.paymentItem.findMany({
+    where: { id: { in: itemIds } },
+    include: { space: true },
+  })
+  if (items.length !== itemIds.length) {
+    return { ok: false, status: 404, error: "One or more payment items were not found", payments: [], failed: [] }
+  }
+
+  const memberships = await prisma.membership.findMany({
+    where: { userId: user.id, spaceId: { in: items.map((i) => i.spaceId) } },
+  })
+  const memberSpaceIds = new Set(memberships.map((m) => m.spaceId))
+  const notMember = items.find((i) => !memberSpaceIds.has(i.spaceId))
+  if (notMember) {
+    return {
+      ok: false,
+      status: 403,
+      error: `Join ${notMember.space.name} before paying its dues`,
+      payments: [],
+      failed: [],
+    }
+  }
+
+  const total = items.reduce((sum, i) => sum + i.amount, 0)
+
+  let balance: number
+  try {
+    const balances = await getBalances(user.bmoniUserId)
+    balance = extractNgnBalance(balances)
+  } catch (err) {
+    console.error("payDues: getBalances failed", err)
+    return { ok: false, status: 502, error: "Couldn't read your wallet balance right now", payments: [], failed: [] }
+  }
+
+  if (balance < total) {
+    return {
+      ok: false,
+      status: 402,
+      error: `Insufficient balance. You have ₦${balance.toLocaleString()}, these ${items.length} items total ₦${total.toLocaleString()}.`,
+      payments: [],
+      failed: [],
+    }
+  }
+
+  const payments: Payment[] = []
+  const failed: { itemId: string; error: string }[] = []
+
+  for (const item of items) {
+    const result = await payDue(user, item.id)
+    if (result.ok) {
+      payments.push(result.payment)
+    } else {
+      failed.push({ itemId: item.id, error: result.error })
+    }
+  }
+
+  return { ok: failed.length === 0, status: failed.length === 0 ? 200 : 207, payments, failed }
+}
+
 export async function payDue(user: User, itemId: string): Promise<PayDueResult> {
   const loaded = await loadPayableItem(user, itemId)
   if (!loaded.ok) {
@@ -139,8 +226,14 @@ export async function payDue(user: User, itemId: string): Promise<PayDueResult> 
       ownerPrivateKey,
     })
 
-    const status = String(result?.data?.status ?? result?.status ?? "")
-    const txRef = String(result?.data?.proposalId ?? result?.proposalId ?? payment.id)
+    const status = String(result?.proposal?.status ?? result?.data?.status ?? result?.status ?? "")
+    const txRef = String(
+      result?.proposal?.blockchainTxHash ??
+        result?.proposal?.id ??
+        result?.data?.proposalId ??
+        result?.proposalId ??
+        payment.id
+    )
 
     if (status !== "COMPLETED") {
       const failed = await prisma.payment.update({

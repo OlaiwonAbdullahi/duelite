@@ -61,7 +61,7 @@ model User {
 model Space {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   name     String // "200L CSC Department"
-  joinCode String @unique // "CSC200"
+  joinCode String @unique // random 5-char code, e.g. "7K9M2"
   repId    String @db.ObjectId
   rep      User   @relation("SpaceRep", fields: [repId], references: [id])
 
