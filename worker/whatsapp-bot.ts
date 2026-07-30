@@ -87,7 +87,13 @@ async function connect() {
       if (!body.trim()) continue
 
       try {
-        const phone = fromJid(jid)
+        // WhatsApp has been migrating chats to privacy-preserving LID
+        // addressing, where remoteJid is an opaque "<id>@lid" instead of
+        // the phone-number JID — senderPn carries the real phone-number
+        // JID alongside it when that happens. Falling back to a bare
+        // fromJid(jid) here silently mismatches real accounts, since the
+        // LID digits never match anything stored in User.phone.
+        const phone = fromJid(msg.key.senderPn ?? jid)
         const user = await prisma.user.findUnique({ where: { phone } })
 
         if (!user) {
