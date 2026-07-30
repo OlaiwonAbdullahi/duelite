@@ -90,7 +90,6 @@ async function main() {
   return { errors }
 }
 
-let page
 main().catch(async (err) => {
   console.error("[test] FAILED:", err.message)
   try {

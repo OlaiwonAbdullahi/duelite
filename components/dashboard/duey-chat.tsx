@@ -19,21 +19,21 @@ const GREETING: ChatMessage = {
 
 function DueyChat() {
   const [open, setOpen] = useState(false)
-  const [loaded, setLoaded] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING])
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
-    if (!open || loaded) return
-    setLoaded(true)
+    if (!open || loadedRef.current) return
+    loadedRef.current = true
     apiFetch<{ messages: ChatMessage[] }>("/api/duey")
       .then((data) => {
         if (data.messages.length > 0) setMessages(data.messages)
       })
       .catch(() => {})
-  }, [open, loaded])
+  }, [open])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
