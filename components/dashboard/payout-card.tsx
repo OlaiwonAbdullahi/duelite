@@ -29,15 +29,8 @@ interface PayoutResult {
   accountHolderName: string
 }
 
-function normalizeBanks(raw: unknown[]): Bank[] {
-  return raw
-    .map((b) => {
-      const bank = b as Record<string, unknown>
-      const code = bank.code ?? bank.bankCode ?? bank.cbnCode
-      const name = bank.name ?? bank.bankName
-      return code && name ? { code: String(code), name: String(name) } : null
-    })
-    .filter((b): b is Bank => b !== null)
+function normalizeBanks(raw: Array<{ bankCode: string; bankName: string }>): Bank[] {
+  return raw.map(({ bankCode, bankName }) => ({ code: bankCode, name: bankName }))
 }
 
 function PayoutCard({
@@ -58,7 +51,7 @@ function PayoutCard({
 
   useEffect(() => {
     if (!open || banks.length > 0) return
-    apiFetch<{ banks: unknown[] }>("/api/payout/banks")
+    apiFetch<{ banks: Array<{ bankCode: string; bankName: string }> }>("/api/payout/banks")
       .then((data) => setBanks(normalizeBanks(data.banks)))
       .catch(() => setBanks([]))
   }, [open, banks.length])

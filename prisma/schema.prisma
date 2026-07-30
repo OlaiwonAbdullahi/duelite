@@ -146,3 +146,14 @@ model DueyMessage {
 
   @@index([userId, channel, createdAt])
 }
+
+// Baileys' WhatsApp session (creds + signal keys), persisted here instead of
+// local files so the always-on worker (worker/whatsapp-bot.ts) can restart on
+// a redeployable host (Railway/Fly) without losing the linked session and
+// forcing a re-scan of the QR code. One row per key; "id" is Baileys' own
+// key name (e.g. "creds", "session-234...:1", "app-state-sync-key-...").
+model WhatsAppAuthKey {
+  id        String   @id @map("_id")
+  value     String
+  updatedAt DateTime @updatedAt
+}

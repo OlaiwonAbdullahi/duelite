@@ -20,12 +20,8 @@ function WithdrawalDetailsCard() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    apiFetch<{ banks: Array<Record<string, unknown>> }>("/api/payout/banks")
-      .then(({ banks }) => setBanks(banks.flatMap((bank) => {
-        const code = bank.code ?? bank.bankCode ?? bank.cbnCode
-        const name = bank.name ?? bank.bankName
-        return code && name ? [{ code: String(code), name: String(name) }] : []
-      })))
+    apiFetch<{ banks: Array<{ bankCode: string; bankName: string }> }>("/api/payout/banks")
+      .then(({ banks }) => setBanks(banks.map(({ bankCode, bankName }) => ({ code: bankCode, name: bankName }))))
       .catch(() => toast.error("Couldn't load the bank list"))
   }, [])
 
@@ -39,6 +35,7 @@ function WithdrawalDetailsCard() {
         method: "POST",
         body: JSON.stringify({ accountNumber, bankCode: bank.code, bankName: bank.name }),
       })
+      console.log("payout account response:", result)
       toast.success(`Verified account for ${result.accountHolderName}`)
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Couldn't save withdrawal details")

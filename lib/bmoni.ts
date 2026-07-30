@@ -288,6 +288,30 @@ export async function getProposalSignPayload(userId: string, proposalId: string)
   return bmoniRequest<BmoniResponse>("GET", `/v1/users/${userId}/smart-wallets/proposals/${proposalId}/sign-payload`)
 }
 
+// Per BMONI's docs, sign-payload is only available once the proposal reaches
+// PENDING_SIGNATURES: "a 404 here usually means the approval threshold has
+// not been met yet" — so poll rather than call once, in case approval hasn't
+// propagated the instant approveProposal() resolves.
+async function waitForSignPayload(
+  userId: string,
+  proposalId: string,
+  opts?: { intervalMs?: number; timeoutMs?: number }
+) {
+  const interval = opts?.intervalMs ?? 1500
+  const timeout = opts?.timeoutMs ?? 15_000
+  const start = Date.now()
+
+  while (true) {
+    try {
+      return await getProposalSignPayload(userId, proposalId)
+    } catch (err) {
+      const is404 = err instanceof BmoniError && err.status === 404
+      if (!is404 || Date.now() - start >= timeout) throw err
+      await sleep(interval)
+    }
+  }
+}
+
 export async function signProposal(userId: string, proposalId: string, signature: string) {
   return bmoniRequest<BmoniResponse>("POST", `/v1/users/${userId}/smart-wallets/proposals/${proposalId}/sign`, {
     signature,
@@ -303,7 +327,12 @@ export async function getProposal(userId: string, proposalId: string) {
 // seen in earlier, less-confirmed responses, so a shape change degrades
 // gracefully rather than crashing outright.
 function extractProposalId(response: BmoniResponse): string | undefined {
-  return response?.proposal?.id ?? response?.data?.proposalId ?? response?.proposalId
+  return (
+    response?.proposal?.id ??
+    response?.data?.proposal?.id ??
+    response?.data?.proposalId ??
+    response?.proposalId
+  )
 }
 
 function sleep(ms: number) {
@@ -366,15 +395,41 @@ export async function signProposalPayload(ownerPrivateKey: Hex, payload: BmoniRe
   )
 }
 
+export interface ProposalOutcome {
+  proposalId: string
+  // true once a valid signature has been submitted — from that point the
+  // transfer is executing on BMONI's side regardless of what happens next,
+  // so callers must NEVER treat a `pending` outcome as a failure (e.g. must
+  // not mark a Payment FAILED — the money may already be moving).
+  pending: boolean
+  proposal: BmoniResponse | null
+}
+
 // Runs the full approve -> sign-payload -> sign -> poll cycle for a proposal
 // that's already been created (i.e. call this with the proposalId from an
-// offramp/transfer/etc response).
-export async function signAndCompleteProposal(userId: string, proposalId: string, ownerPrivateKey: Hex) {
+// offramp/transfer/etc response). Only throws for failures *before* signing
+// (nothing executed yet, safe to treat as a hard failure) — anything after
+// signProposal() succeeds resolves to a ProposalOutcome instead, even if
+// polling for the final status times out.
+export async function signAndCompleteProposal(
+  userId: string,
+  proposalId: string,
+  ownerPrivateKey: Hex
+): Promise<ProposalOutcome> {
   await approveProposal(userId, proposalId)
-  const signPayload = await getProposalSignPayload(userId, proposalId)
+  const signPayload = await waitForSignPayload(userId, proposalId)
   const signature = await signProposalPayload(ownerPrivateKey, signPayload)
   await signProposal(userId, proposalId, signature)
-  return pollProposalStatus(userId, proposalId)
+
+  try {
+    return { proposalId, pending: false, proposal: await pollProposalStatus(userId, proposalId) }
+  } catch (err) {
+    console.error(
+      `signAndCompleteProposal: proposal ${proposalId} was signed but its outcome couldn't be confirmed — treating as pending, not failed:`,
+      err
+    )
+    return { proposalId, pending: true, proposal: null }
+  }
 }
 
 // ---------------------------------------------------------------------------
