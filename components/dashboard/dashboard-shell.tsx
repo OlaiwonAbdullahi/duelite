@@ -2,6 +2,7 @@
 
 import { Topbar } from "@/components/dashboard/topbar"
 import { DashboardNav, DashboardMobileNav } from "@/components/dashboard/dashboard-nav"
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
 import { DueyChat } from "@/components/dashboard/duey-chat"
 import { DashboardProvider, useDashboard } from "@/components/dashboard/dashboard-context"
 
@@ -9,11 +10,7 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
   const { loading, name, balance } = useDashboard()
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas">
-        <p className="text-[14px] text-ink-soft">Loading your dashboard…</p>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
